@@ -261,51 +261,71 @@ Json Validation
         ################# Matched
         #===========================TransID
 
-        FOR     ${TransIdMatched}    IN      @{matching_records} 
-            ${transideach}     Set Variable    ${TransIdMatched['TransID']}
-            Append To List      ${TransIDsMatchedList}     ${transideach}
+        FOR     ${datas}    IN      @{matching_records} 
+            ${transideach}     Set Variable    ${datas['TransID']}
+            ${lineideach}     Set Variable    ${datas['Line_ID']}
+            ${Credr}     Set Variable    ${datas['Credit']}
+            ${matchdr}     Set Variable    ${datas['Debit']}
+            ${detai}     Set Variable    ${datas['Details']}
+            ${datee}     Set Variable    ${datas['Date']}
+            ${reff}     Set Variable    ${datas['Reference']}
+
+            FOR     ${matchedT}     IN     @{matched_Ids_Un_rec}
+                IF      '${matchedT}'=='${transideach}'
+                    Append To List      ${TransIDsMatchedList}     ${transideach}
+                    Append To List      ${LineIdsMatchedList}     ${lineideach}
+                    Append To List      ${CreditMatchedList}     ${Credr}
+                    Append To List      ${DebitMatchedList}     ${matchdr}
+                    Append To List      ${DetailsMatchedList}     ${detai}
+                    Append To List      ${DatesMatchedList}     ${datee}
+                    Append To List      ${referenceMatchedList}     ${reff}
+
+                    Exit For Loop
+                END
+            END
+            
         END
-        #===========================LineId
+        # #===========================LineId
 
-        FOR     ${LineIdMatched}    IN      @{matching_records} 
-            ${lineideach}     Set Variable    ${LineIdMatched['Line_ID']}
-            Append To List      ${LineIdsMatchedList}     ${lineideach}
-        END
+        # FOR     ${LineIdMatched}    IN      @{matching_records} 
+        #     ${lineideach}     Set Variable    ${LineIdMatched['Line_ID']}
+        #     Append To List      ${LineIdsMatchedList}     ${lineideach}
+        # END
 
-        #===========================Credits
+        # #===========================Credits
 
-        FOR     ${creditsMatched}    IN      @{matching_records} 
-            ${Credr}     Set Variable    ${creditsMatched['Credit']}
-            Append To List      ${CreditMatchedList}     ${Credr}
-        END
+        # FOR     ${creditsMatched}    IN      @{matching_records} 
+        #     ${Credr}     Set Variable    ${creditsMatched['Credit']}
+        #     Append To List      ${CreditMatchedList}     ${Credr}
+        # END
 
-        #===========================Debits
+        # #===========================Debits
 
-        FOR     ${DebitsMatched}    IN      @{matching_records} 
-            ${matchdr}     Set Variable    ${DebitsMatched['Debit']}
-            Append To List      ${DebitMatchedList}     ${matchdr}
-        END
+        # FOR     ${DebitsMatched}    IN      @{matching_records} 
+        #     ${matchdr}     Set Variable    ${DebitsMatched['Debit']}
+        #     Append To List      ${DebitMatchedList}     ${matchdr}
+        # END
 
-        #===========================Details
+        # #===========================Details
 
-        FOR     ${detailsMatched}    IN      @{matching_records} 
-            ${detai}     Set Variable    ${detailsMatched['Details']}
-            Append To List      ${DetailsMatchedList}     ${detai}
-        END
+        # FOR     ${detailsMatched}    IN      @{matching_records} 
+        #     ${detai}     Set Variable    ${detailsMatched['Details']}
+        #     Append To List      ${DetailsMatchedList}     ${detai}
+        # END
 
-        #===========================Dates
+        # #===========================Dates
 
-        FOR     ${datesMatched}    IN      @{matching_records} 
-            ${datee}     Set Variable    ${datesMatched['Date']}
-            Append To List      ${DatesMatchedList}     ${datee}
-        END
+        # FOR     ${datesMatched}    IN      @{matching_records} 
+        #     ${datee}     Set Variable    ${datesMatched['Date']}
+        #     Append To List      ${DatesMatchedList}     ${datee}
+        # END
 
-        #===========================RefNos
+        # #===========================RefNos
 
-        FOR     ${RefsMatched}    IN      @{matching_records} 
-            ${reff}     Set Variable    ${RefsMatched['Reference']}
-            Append To List      ${referenceMatchedList}     ${reff}
-        END
+        # FOR     ${RefsMatched}    IN      @{matching_records} 
+        #     ${reff}     Set Variable    ${RefsMatched['Reference']}
+        #     Append To List      ${referenceMatchedList}     ${reff}
+        # END
 
         #===========================
         #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -320,6 +340,12 @@ Json Validation
 
         FOR     ${CreditsunMatched}    IN      @{unmatched_records} 
             ${credun}     Set Variable    ${CreditsunMatched['CreditAmount']}
+            IF    '${credun}' != '' and '${credun}'.isdecimal()
+                ${credun}     Convert To Number    ${credun}
+                ${credun}     Evaluate    "{:.2f}".format(${credun})
+            ELSE
+                Log To Console      \nError ${excel_debit}
+            END
             Append To List      ${Credits_UnMatchedList}     ${credun}
         END
 
@@ -327,6 +353,12 @@ Json Validation
 
         FOR     ${DebitstsUnMatched}    IN      @{unmatched_records} 
             ${debr}     Set Variable    ${DebitstsUnMatched['DebitAmount']}
+            IF    '${debr}' != '' and '${debr}'.isdecimal()
+                ${debr}     Convert To Number    ${debr}
+                ${debr}     Evaluate    "{:.2f}".format(${debr})
+            ELSE
+                Log To Console      \nError ${excel_debit}
+            END
             Append To List      ${Debits_UnMatchedList}     ${debr}
         END    
 
@@ -340,7 +372,8 @@ Json Validation
         #===========================Dates
 
         FOR     ${DatesUnMatched}    IN      @{unmatched_records} 
-            ${dateun}     Set Variable    ${DatesUnMatched['DueDate']}
+            ${dateun1}       Set Variable    ${DatesUnMatched['DueDate']}
+            ${dateun}       Convert Date    ${dateun1}    date_format=%Y%m%d    result_format=%Y-%m-%dT%H:%M:%SZ
             Append To List      ${Dates_UnMatchedList}      ${dateun}
         END
 
@@ -390,46 +423,46 @@ Json Validation
             IF      ${Matched_UnRec_TransIds_Length}>0
                 IF  ${counter} < ${Matched_UnRec_TransIds_Length}
                     IF    '${DebitMatchedList}[${counter}]' == '0.00'
-                        ${Ref_No}    Set Variable    ${referenceMatchedList}[${counter}]
-                        IF      '${Ref_No}' == '0'
-                            ${Ref_No}   Set Variable    null
-                        ELSE
-                            ${Ref_No}   Set Variable    ${Ref_No}
-                        END
-                        ${payload1}     Set variable        {"AccountCode": "${BankAccountCode}", "CreditAmount": "${CreditMatchedList}[${counter}]", "DocNumberType": "bpdt_DocNum", "Reference": ${Ref_No},"Memo":"${DetailsMatchedList}[${counter}]","DueDate":"${DatesMatchedList}[${counter}]"} 
-                        Log To Console      Bank Page Post Body1:${payload1}
-                        # ${response}=  Post Request  ${sessionname}    ${BaseUrl}/BankPages  data=${payload1}
-                        # IF    ${response.status_code} == 201
-                        #     ${bankpage_response}    Set Variable    ${response.json()}
-                        #     ${seqno}    Set Variable    ${bankpage_response['Sequence']}
-                        #     Append To List    ${sequencelist}    ${seqno}
-                        #     Log To Console    \nPOST BankPages:::::::::: - Success...
+                        # ${Ref_No}    Set Variable    ${referenceMatchedList}[${counter}]
+                        # IF      '${Ref_No}' == '0'
+                        #     ${Ref_No}   Set Variable    null
                         # ELSE
-                        #     Log To Console    \nPOST BankPages:::::::::: - Failed...
+                        #     ${Ref_No}   Set Variable    ${Ref_No}
                         # END
+                        ${payload1}     Set variable        {"AccountCode": "${BankAccountCode}", "CreditAmount": "${CreditMatchedList}[${counter}]", "DocNumberType": "bpdt_DocNum", "Memo":"${DetailsMatchedList}[${counter}]","DueDate":"${DatesMatchedList}[${counter}]"} 
+                        Log To Console      Bank Page Post Body1:${payload1}
+                        ${response}=  Post Request  ${sessionname}    ${BaseUrl}/BankPages  data=${payload1}
+                        IF    ${response.status_code} == 201
+                            ${bankpage_response}    Set Variable    ${response.json()}
+                            ${seqno}    Set Variable    ${bankpage_response['Sequence']}
+                            Append To List    ${sequencelist}    ${seqno}
+                            Log To Console    \nPOST BankPages:::::::::: - Success...
+                        ELSE
+                            Log To Console    \nPOST BankPages:::::::::: - Failed...${response.json()}
+                        END
                     END
                 END
             END
             IF  ${New_Unmatched_Len}>0
                 IF  ${counter} < ${New_Unmatched_Len}
-                    IF    '${Credits_UnMatchedList}[${counter}]' == '0.00'
-                        ${Ref_No}    Set Variable    ${reference_UnMatchedList}[${counter}]
-                        IF      '${Ref_No}' == '0'
-                            ${Ref_No}   Set Variable    null
-                        ELSE
-                            ${Ref_No}   Set Variable    ${Ref_No}
-                        END
-                        ${payload1}     Set variable        {"AccountCode": "${BankAccountCode}", "DebitAmount": "${Debits_UnMatchedList}[${counter}]", "DocNumberType": "bpdt_DocNum", "Reference": ${Ref_No},"Memo":"${Details_UnMatchedList}[${counter}]","DueDate":"${Dates_UnMatchedList}[${counter}]"} 
-                        Log To Console      Bank Page Post Body1:${payload1}
-                        # ${response}=  Post Request  ${sessionname}    ${BaseUrl}/BankPages  data=${payload1}
-                        # IF    ${response.status_code} == 201
-                        #     ${bankpage_response}    Set Variable    ${response.json()}
-                        #     ${seqno}    Set Variable    ${bankpage_response['Sequence']}
-                        #     Append To List    ${sequencelist}    ${seqno}
-                        #     Log To Console    \nPOST BankPages:::::::::: - Success...
+                    IF    '${Credits_UnMatchedList}[${counter}]' == ''
+                        # ${Ref_No}    Set Variable    ${reference_UnMatchedList}[${counter}]
+                        # IF      '${Ref_No}' == '0'
+                        #     ${Ref_No}   Set Variable    null
                         # ELSE
-                        #     Log To Console    \nPOST BankPages:::::::::: - Failed...
+                        #     ${Ref_No}   Set Variable    ${Ref_No}
                         # END
+                        ${payload1}     Set variable        {"AccountCode": "${BankAccountCode}", "DebitAmount": "${Debits_UnMatchedList}[${counter}]", "DocNumberType": "bpdt_DocNum", "Memo":"${Details_UnMatchedList}[${counter}]","DueDate":"${Dates_UnMatchedList}[${counter}]"} 
+                        Log To Console      Bank Page Post Body1:${payload1}
+                        ${response}=  Post Request  ${sessionname}    ${BaseUrl}/BankPages  data=${payload1}
+                        IF    ${response.status_code} == 201
+                            ${bankpage_response}    Set Variable    ${response.json()}
+                            ${seqno}    Set Variable    ${bankpage_response['Sequence']}
+                            Append To List    ${sequencelist}    ${seqno}
+                            Log To Console    \nPOST BankPages:::::::::: - Success...
+                        ELSE
+                            Log To Console    \nPOST BankPages:::::::::: - Failed...${response.json()}
+                        END
                     END
                 END
             END
@@ -443,33 +476,90 @@ Json Validation
     Log To Console      \nUnMatched Length: ${New_Unmatched_Len}
     
     ##############----------POST & GET Journal Entry Lines----------###############
-    # ${JdtNumbsList}     Create List
-    # # ${JlinesTransNumbersList}     Create List
-    # ${JlinesList}     Create List
-    # IF      ${New_Unmatched_Len} > 0
-    #     ${PAYLOAD2}    Set Variable         {"JournalEntryLines": [{"AccountCode": "${rev_bank}","Credit": ${DebitSum},"Debit": 0.0,"BPLID": 1},{"AccountCode": "${bank_charge_paid}","Credit": 0.0,"Debit": ${DebitSum},"BPLID": 1}]}
-    #     Log To Console      \nPOST PayloadJlines: ${PAYLOAD2}
-    #     ${responseJEntry}=  Post Request  ${sessionname}    ${base_url}/JournalEntries  data=${PAYLOAD2}  headers=${headers}
-    #     IF    ${responseJEntry.status_code} == 201
-    #         ${JEntrypostResponseBody}       Set Variable        ${responseJEntry.json()}
-    #         ${JdtNumberss}       Set Variable        ${JEntrypostResponseBody['JdtNum']}
-    #         ${Jlines}       Set Variable        ${JEntrypostResponseBody['JournalEntryLines']}
-    #         Append To List      ${JlinesList}     ${Jlines}
-    #         Append To List      ${JdtNumbsList}     ${JdtNumberss}
-    #         Log To Console    \nSuccessjournalentry
-    #     ELSE
-    #         Log To Console    \nFailjournalentry ${responseJEntry.json()}
-    #     END
-    # END
+    ${JdtNumbsList}     Create List
+    # ${JlinesTransNumbersList}     Create List
+    ${JlinesList}     Create List
+    IF      ${New_Unmatched_Len} > 0
+        ${PAYLOAD2}    Set Variable         {"JournalEntryLines": [{"AccountCode": "${BankAccountCode}","Credit": ${DebitSum},"Debit": 0.0,"BPLID": 1},{"AccountCode": "${BankChargeAccountCode}","Credit": 0.0,"Debit": ${DebitSum},"BPLID": 1}]}
+        Log To Console      \nPOST PayloadJlines: ${PAYLOAD2}
+        ${responseJEntry}=  Post Request  ${sessionname}    ${base_url}/JournalEntries  data=${PAYLOAD2}
+        IF    ${responseJEntry.status_code} == 201
+            ${JEntrypostResponseBody}       Set Variable        ${responseJEntry.json()}
+            ${JdtNumberss}       Set Variable        ${JEntrypostResponseBody['JdtNum']}
+            ${Jlines}       Set Variable        ${JEntrypostResponseBody['JournalEntryLines']}
+            Append To List      ${JlinesList}     ${Jlines}
+            Append To List      ${JdtNumbsList}     ${JdtNumberss}
+            Log To Console    \nSuccessjournalentry
+        ELSE
+            Log To Console    \nFailjournalentry ${responseJEntry.json()}
+        END
+    END
 
-    # # Log To Console     \nGetting JlinesList :::::::: ${JlinesList} 
-    # Log To Console     \nGetting tans_Idddddd :::::::: ${JdtNumbsList} 
+    # Log To Console     \nGetting JlinesList :::::::: ${JlinesList} 
+    Log To Console     \nGetting tans_Idddddd :::::::: ${JdtNumbsList} 
     
-    # ${JdtNumbsListLength}       Evaluate        len(${JdtNumbsList})
-    # Log To Console      \nnPostJentryLengthIds:${JdtNumbsListLength}
+    ${JdtNumbsListLength}       Evaluate        len(${JdtNumbsList})
+    Log To Console      \nnPostJentryLengthIds:${JdtNumbsListLength}
 
-    # ${mixed_JdtNum_list}    Create List    @{JdtNumbsList}    @{matched_Ids_Un_rec}
-    # ${mixed_JdtNum_list_Length}     Evaluate    len(${mixed_JdtNum_list})
-    # log To Console      \nMixedID List::${mixed_JdtNum_list}
-    # log To Console      \nMixedID List Length::${mixed_JdtNum_list_Length}
+    ${mixed_JdtNum_list}    Create List    @{JdtNumbsList}    @{matched_Ids_Un_rec}
+    ${mixed_JdtNum_list_Length}     Evaluate    len(${mixed_JdtNum_list})
+    log To Console      \nMixedID List::${mixed_JdtNum_list}
+    log To Console      \nMixedID List Length::${mixed_JdtNum_list_Length}
 
+    
+    # ##############----------POST External Reconciliation----------###############
+
+    IF      ${bnk_page_seq_lenth} > 0 and ${JEntrypostResponseBody}
+        #######====================================
+        Log To Console      \nSequenceList: ${sequencelist}
+        ${reconciliation_lines}    Create List
+        ${bnkstmnt_lines}    Create List
+        FOR     ${count}    IN RANGE    0   ${bnk_page_seq_lenth}
+            ${bnkstmnt_line}    Create Dictionary    BankStatementAccountCode=${BankAccountCode}    Sequence=${sequencelist}[${count}]     #Ok
+            Append To List    ${bnkstmnt_lines}    ${bnkstmnt_line}
+            Log to Console    \n\nbnkstmnt_line: ${bnkstmnt_line}
+        END
+
+        FOR     ${TrCount}      IN RANGE       ${Matched_UnRec_TransIds_Length}
+            # matched_Ids_Un_rec
+            ${reconciliation_line}    Create Dictionary    LineNumber=${LineIdsMatchedList}[${TrCount}]    TransactionNumber=${TransIDsMatchedList}[${TrCount}]
+            Append To List    ${reconciliation_lines}    ${reconciliation_line}
+            Log to Console    \n\nReconciliation_line: ${reconciliation_line}
+        END
+        IF      ${JdtNumbsListLength} == 1
+            ${reconciliation_line}    Create Dictionary    LineNumber=0    TransactionNumber=${JdtNumbsList}[0]
+            Append To List    ${reconciliation_lines}    ${reconciliation_line}
+            Log to Console    \n\nReconciliation_line: ${reconciliation_line}
+        END
+
+        ${reconciliation_journal_entry_lines}    Evaluate    json.dumps(${reconciliation_lines})
+        ${reconciliation_bank_statement_lines}    Evaluate    json.dumps(${bnkstmnt_lines})
+
+        ${reconciliation_journal_entry_lines}    Set Variable    ${reconciliation_journal_entry_lines.replace('"[', '[').replace(']"', ']')}
+        ${reconciliation_bank_statement_lines}    Set Variable    ${reconciliation_bank_statement_lines.replace('"[', '[').replace(']"', ']')}
+
+        ${reconciliation_journal_entry_lines}    Set Variable    ${reconciliation_journal_entry_lines.replace('"\\[', '[').replace('\\]"', ']')}
+        ${reconciliation_bank_statement_lines}    Set Variable    ${reconciliation_bank_statement_lines.replace('"\\[', '[').replace('\\]"', ']')}
+
+        ${payload3}    Create Dictionary        ReconciliationAccountType=rat_GLAccount    ReconciliationBankStatementLines=${reconciliation_bank_statement_lines}    ReconciliationJournalEntryLines=${reconciliation_journal_entry_lines}
+        ${final_payload}    Create Dictionary    ExternalReconciliation=${payload3}
+
+        ${final_payload_string}    Evaluate    json.dumps(${final_payload})
+
+        ${final_payload_string}    Set Variable    ${final_payload_string.replace('\\', '')}
+        ${final_payload_string}    Set Variable    ${final_payload_string.replace('"[', '[').replace(']"', ']')}
+
+        ${final_payload_string}    Set Variable    ${final_payload_string.replace('"\\[', '[').replace('\\]"', ']')}
+
+        Log To Console  \nFinal Body ExterNal ReconciliationService:\n ${final_payload_string}
+
+        ${responseFinal}=  Post Request  ${sessionname}    ${BaseUrl}/ExternalReconciliationsService_Reconcile  data=${final_payload_string}
+        IF    ${responseFinal.status_code} == 204
+            Log To Console      \nSuccess All
+            Log To Console    \nReconciliation Success 
+        ELSE
+            ${ErrorMsg}     Set Variable    ${responseFinal.json()['error']['message']['value']}
+           
+            Log To Console      Reconciliation Failed \n ${ErrorMsg}
+        END
+    END 
